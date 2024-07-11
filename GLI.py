@@ -1,4 +1,5 @@
 from nltk.corpus import stopwords
+from nltk.stem import PorterStemmer
 from nltk.tokenize import word_tokenize
 import nltk
 from lxml import etree
@@ -11,9 +12,9 @@ warnings.filterwarnings("ignore")
 nltk.download('punkt')
 nltk.download('stopwords')
 
+usar_porter_stemmer = False
 
 def processamento(texto):
-    texto = re.sub(r'\d+', '', texto)
     # Remover pontuações usando expressão regular
     texto = re.sub(r'[^\w\s]', '', texto)
 
@@ -27,18 +28,23 @@ def processamento(texto):
     palavras_filtradas = [palavra.upper() for palavra in palavras if len(
         palavra) > 3 and palavra.lower() not in stop_words]
 
+    if(usar_porter_stemmer):
+        ps = PorterStemmer()
+        palavras_filtradas = [ps.stem(palavra) for palavra in palavras_filtradas]
+
     return palavras_filtradas
 
-
 def gerador_de_lista_invertida():
+    global usar_porter_stemmer
     lista_xml = []
     with open('GLI.CFG', 'r') as CFG:
         for linha in CFG:
-            if linha[0] == 'L':
+            if linha[0] == 'S':
+                usar_porter_stemmer = True
+
+            elif linha[0] == 'L':
                 arquivo = (linha.split('=')[1])[1:-2]
-
                 parser = etree.XMLParser(dtd_validation=True)
-
                 tree = etree.parse(f'data/{arquivo}', parser)
                 dicionario = xmltodict.parse(etree.tostring(tree))
                 xml = dicionario['FILE']['RECORD']
@@ -70,6 +76,3 @@ def gerador_de_lista_invertida():
                         list(lista_invertida.items()), columns=['Termos', 'Documentos'])
                     df_lista_invertida.to_csv(
                         f'RESULT/{arquivo}.csv', index=False, header=False, sep=';')
-
-
-gerador_de_lista_invertida()
