@@ -1,4 +1,5 @@
 from nltk.corpus import stopwords
+from nltk.stem import PorterStemmer
 from nltk.tokenize import word_tokenize
 import nltk
 from lxml import etree
@@ -10,6 +11,7 @@ warnings.filterwarnings("ignore")
 nltk.download('punkt')
 nltk.download('stopwords')
 
+usar_porter_stemmer = False
 
 def processamento(texto):
     # Remover pontuações usando expressão regular
@@ -25,8 +27,11 @@ def processamento(texto):
     palavras_filtradas = [palavra.upper() for palavra in palavras if len(
         palavra) > 3 and palavra.lower() not in stop_words]
 
-    return palavras_filtradas
+    if(usar_porter_stemmer):
+        ps = PorterStemmer()
+        palavras_filtradas = [ps.stem(palavra) for palavra in palavras_filtradas]
 
+    return palavras_filtradas
 
 def calcula_votos(s):
     # Inicializar contadores para cada dígito (0, 1, 2)
@@ -48,14 +53,16 @@ def calcula_votos(s):
     else:
         return '0'
 
-
 def processador_de_consultas():
+    global usar_porter_stemmer
     with open('PC.CFG', 'r') as CFG:
         for linha in CFG:
-            if linha[0] == 'L':
+            if linha[0] == 'S':
+                usar_porter_stemmer = True
+
+            elif linha[0] == 'L':
                 arquivo = (linha.split('=')[1])[1:-2]
                 parser = etree.XMLParser(dtd_validation=True)
-
                 tree = etree.parse(f'data/{arquivo}', parser)
                 dict = xmltodict.parse(etree.tostring(tree))
                 xml = dict['FILEQUERY']['QUERY']
@@ -64,19 +71,16 @@ def processador_de_consultas():
                 arquivo = (linha.split('=')[1])[1:-2]
                 df = pd.DataFrame(xml)
                 df = df[['QueryNumber', 'QueryText']]
-
                 df['QueryText'] = df['QueryText'].apply(processamento)
-
                 df.to_csv(f'RESULT/{arquivo}.csv', index=False, sep=';')
 
             elif linha[0] == 'E':
-                arquivo = (linha.split('=')[1])[1:-2]
+                arquivo = (linha.split('=')[1])[1:-1]
                 df = pd.DataFrame(xml)
                 df = df[['QueryNumber', 'Records']]
                 df['Records'] = df['Records'].apply(lambda x: x['Item'])
                 df = df.explode('Records')
                 df['DocVotes'] = df['Records'].apply(lambda x: x['@score'])
-
                 df['DocVotes'] = df['DocVotes'].apply(calcula_votos)
                 df['DocNumber'] = df['Records'].apply(lambda x: x['#text'])
                 df.drop(columns=['Records'], inplace=True)
