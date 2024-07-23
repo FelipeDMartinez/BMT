@@ -1,0 +1,5 @@
+- Gráfico de 11 pontos de precisão e recall
+- F1 (médio)
+- Precision@5 (médio)
+- Precision@10 (médio)
+- R-Precision (médio)
