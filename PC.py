@@ -13,6 +13,7 @@ nltk.download('stopwords')
 
 usar_porter_stemmer = False
 
+
 def processamento(texto):
     # Remover pontuações usando expressão regular
     texto = re.sub(r'[^\w\s]', '', texto)
@@ -27,11 +28,13 @@ def processamento(texto):
     palavras_filtradas = [palavra.upper() for palavra in palavras if len(
         palavra) > 3 and palavra.lower() not in stop_words]
 
-    if(usar_porter_stemmer):
+    if (usar_porter_stemmer):
         ps = PorterStemmer()
-        palavras_filtradas = [ps.stem(palavra) for palavra in palavras_filtradas]
+        palavras_filtradas = [ps.stem(palavra)
+                              for palavra in palavras_filtradas]
 
     return palavras_filtradas
+
 
 def calcula_votos(s):
     # Inicializar contadores para cada dígito (0, 1, 2)
@@ -52,6 +55,7 @@ def calcula_votos(s):
         return '1'
     else:
         return '0'
+
 
 def processador_de_consultas():
     global usar_porter_stemmer
